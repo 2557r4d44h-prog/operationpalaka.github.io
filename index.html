@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Frog</title>
+
+<style>
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: Arial;
+  overflow: hidden;
+}
+
+/* MAIN */
+#mainScreen {
+  text-align: center;
+  color: white;
+}
+
+/* BACKGROUND */
+.bg-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+/* TOP RIGHT IMAGE */
+.main-img {
+  position: fixed;
+  top: 60px;
+  right: 40px;
+  width: 250px;
+  cursor: pointer;
+}
+
+.main-img img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.main-label {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  font-size: 12px;
+  background: rgba(0,0,0,0.7);
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+/* FROG */
+svg {
+  height: 70vh;
+  animation: float 3s infinite;
+}
+
+@keyframes float {
+  50% { transform: translateY(-8px); }
+}
+
+.part {
+  fill: #6fbf73;
+  stroke: #2e7d32;
+  stroke-width: 2;
+  cursor: pointer;
+}
+
+.part:hover {
+  filter: drop-shadow(0 0 10px #a5d6a7);
+}
+
+.static { fill:#6fbf73; stroke:#2e7d32; }
+.belly { fill:#9be7a1; }
+
+/* SLIDES */
+.slide {
+  position: fixed;
+  inset: 0;
+  display: none;
+  color: white;
+}
+
+.slide.active { display: block; }
+
+.slide video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+/* Overlay FIX */
+.slide::after {
+  content:"";
+  position:fixed;
+  inset:0;
+  background: rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+/* IMAGE AREA */
+.top-image {
+  width: 100%;
+  height: 45vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.top-image::before {
+  content: "";
+  position: absolute;
+  width: 70%;
+  height: 80%;
+  background: rgba(0,0,0,0.6);
+  filter: blur(40px);
+  border-radius: 20px;
+  z-index: 0;
+}
+
+.top-image img {
+  position: relative;
+  z-index: 1;
+  max-height: 90%;
+  max-width: 90%;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+/* PANEL */
+.panel {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  margin: 20px auto;
+  background: rgba(0,0,0,0.65);
+  padding: 30px;
+  border-radius: 15px;
+}
+
+#bodySlide {
+  overflow-y: auto;
+}
+
+/* BODY TEXT */
+.section {
+  margin-bottom: 15px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+}
+
+.section h3 {
+  margin-bottom: 5px;
+}
+
+/* BACK BUTTON FIXED */
+.back {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  z-index: 9999;
+  font-size: 14px;
+}
+
+/* WARNING MODAL (IMPROVED) */
+.warning {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.warning-box {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  color: #222;
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  animation: popIn 0.3s ease;
+}
+
+.warning-box h2 {
+  margin-bottom: 10px;
+}
+
+.warning-box p {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.warning-box button {
+  padding: 10px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.warning-box button:first-child {
+  background: #43a047;
+  color: white;
+}
+
+.warning-box button:last-child {
+  background: #e53935;
+  color: white;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ✅ HIGHLIGHT BOX (FIXED) */
+.highlight-box {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.6);
+  padding: 15px;
+  border-radius: 12px;
+  color: white;
+  font-size: 14px;
+  z-index: 2; /* FIXED so it doesn't block frog */
+}
+
+.highlight-box div {
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.highlight-box div:hover {
+  color: #a5d6a7;
+}
+
+.organ {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+}
+
+.organ img {
+  width: 120px;
+  height: auto;
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+/* CLEAN 2-COLUMN LAYOUT */
+.dual {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.dual-box {
+  flex: 1;
+  text-align: left;
+}
+
+.dual-img {
+  width: 100%;
+  height: 250px;
+  object-fit: contain; /* ✅ shows whole image */
+  background: rgba(0,0,0,0.4); /* optional: fills empty space nicely */
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.dual-text {
+  margin-top: 15px;
+  background: rgba(0,0,0,0.5);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.organ-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.organ-row img {
+  width: 140px;
+  height: 140px;
+  object-fit: contain; /* ✅ prevents cutting */
+  background: rgba(0,0,0,0.4);
+  padding: 5px;
+}
+
+.legend-title {
+  margin-top: 15px;
+  font-weight: bold;
+  color: #a5d6a7;
+}
+
+.legend {
+  margin-top: 10px;
+  background: rgba(0,0,0,0.5);
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  margin-right: 10px;
+  border-radius: 4px;
+}
+
+/* SYSTEM COLORS */
+.circulatory h3 { color: red; }
+.respiratory h3 { color: blue; }
+.digestive h3 { color: green; }
+.reproductive h3 { color: #ffd54f; }
+.excretory h3 { color: purple; }
+.lymphatic h3 { color: orange; }
+.digestive h3 { color: green; }
+
+/* smooth effect */
+.organ-row {
+  transition: all 0.3s ease;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+/* HOVER EFFECT */
+.legend-item:hover {
+  background: rgba(255,255,255,0.15);
+  transform: translateX(5px);
+}
+
+/* CLICK HINT (pulse) */
+.legend-item::after {
+  content: " 👆";
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+#bodySlide {
+  scroll-behavior: smooth;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="mainScreen">
+
+<video autoplay muted loop class="bg-video">
+  <source src="https://www.pexels.com/download/video/32647791/" type="video/mp4">
+</video>
+
+<div class="main-img" onclick="zoomImage('images/frog-real.png')">
+  <img src="Frog (Body).png">
+  <div class="main-label">In Real Life Picture</div>
+</div>
+
+<h1>Interactive Frog Diagram</h1>
+
+<svg viewBox="0 0 600 400">
+
+<ellipse class="part body-part" cx="300" cy="220" rx="140" ry="90"
+onclick="showWarning('bodySlide')" />
+
+<ellipse class="belly" cx="300" cy="235" rx="95" ry="60" pointer-events="none"/>
+
+<ellipse class="part head-part" cx="300" cy="120" rx="95" ry="75"
+onclick="showWarning('headSlide')" />
+
+<!-- EYES -->
+<circle class="static" cx="245" cy="60" r="28"/>
+<circle class="static" cx="355" cy="60" r="28"/>
+
+<circle cx="245" cy="60" r="12" fill="#1b5e20"/>
+<circle cx="355" cy="60" r="12" fill="#1b5e20"/>
+
+<circle cx="240" cy="55" r="5" fill="white"/>
+<circle cx="350" cy="55" r="5" fill="white"/>
+
+<!-- SMILE -->
+<path d="M260 150 Q300 180 340 150"
+stroke="#1b5e20" stroke-width="4" fill="none"/>
+
+<!-- ARMS -->
+<ellipse class="static" cx="210" cy="210" rx="55" ry="28"/>
+<ellipse class="static" cx="390" cy="210" rx="55" ry="28"/>
+
+<!-- LEGS -->
+<ellipse class="part leg-part" cx="180" cy="300" rx="65" ry="35"
+onclick="showWarning('legSlide')" />
+<ellipse class="part leg-part" cx="420" cy="300" rx="65" ry="35"
+onclick="showWarning('legSlide')" />
+
+</svg>
+
+<!-- HIGHLIGHT -->
+<div class="highlight-box">
+  <h3>Highlight</h3>
+  <div onclick="highlightPart('body')">Body</div>
+  <div onclick="highlightPart('head')">Head</div>
+  <div onclick="highlightPart('leg')">Legs</div>
+  <div onclick="resetHighlight()">Reset</div>
+</div>
+
+</div>
+
+<!-- BODY -->
+<div id="bodySlide" class="slide">
+<video autoplay muted loop>
+<source src="https://www.pexels.com/download/video/18353089/" type="video/mp4">
+</video>
+
+<button class="back" onclick="goBack()">← Back</button>
+
+<div class="top-image">
+  <img src="MAIN-F.png">
+</div>
+
+<div class="panel">
+
+<h2>Frog Body</h2>
+
+<div class="dual">
+
+  <!-- LEFT SIDE -->
+  <div class="dual-box">
+    <img src="F-System.png" class="dual-img">
+
+<div class="dual-text">
+  <h2>Systems</h2>
+
+  <div class="section">
+<h3 style="color: red;">Circulatory System</h3>
+<p>The frog has a three-chambered heart consisting of two atria and one ventricle that pumps blood through a closed loop. This system efficiently moves oxygen and nutrients to tissues while transporting waste products to the lungs and skin.</p>
+  </div>
+
+  <div class="section">
+<h3 style="color: blue;">Respiratory System</h3>
+<p>Frogs utilize a positive pressure system to breathe through their lungs, though they also exchange gases through their moist skin and mouth lining.This dual-method approach allows them to remain submerged in water for long periods while still maintaining oxygen levels.</p>
+  </div>
+
+  <div class="section">
+<h3 style="color: green;">Digestive System</h3>
+<p>This system starts at the mouth, where the tongue captures prey, and continues through a short esophagus into the stomach for breakdown. Nutrients are then absorbed in the small intestine, while the large intestine processes waste before it exits through the cloaca.</p>
+  </div>
+
+  <div class="section">
+<h3 style="color: yellow;">Reproductive System</h3>
+<p>In males, testes produce sperm that travel through the kidneys, whereas females have large ovaries that produce eggs to be released into the water. Most frogs practice external fertilization, where the male grips the female in amplexus to fertilize the eggs as they are laid.</p>
+  </div>
+
+<div class="section">
+  <h3 style="color: purple;">Excretory System</h3>
+  <p>The primary organs are the kidneys, which filter nitrogenous wastes from the blood to create urine. This waste travels through the ureters to the urinary bladder for storage before being expelled from the body through the cloaca.</p>
+</div>
+
+<div class="section">
+  <h3 style="color: orange;">Lymphatic System</h3>
+  <p>This system consists of a network of vessels and "lymph hearts" that pump fluid back into the circulatory system to maintain fluid balance. It plays a critical role in the frog's immunity by transporting white blood cells and filtering out harmful pathogens throughout the body.</p>
+</div>
+
+<!-- ✅ LEGEND AT THE BOTTOM (CORRECT PLACE) -->
+<div class="legend-title">System Legend</div>
+
+<div class="legend">
+
+<div class="legend-item" onclick="highlightSystem('circulatory', event)">
+  <div class="legend-color" style="background:red;"></div>
+  Circulatory System
+</div>
+
+<div class="legend-item" onclick="highlightSystem('respiratory', event)">
+  <div class="legend-color" style="background:blue;"></div>
+  Respiratory System
+</div>
+
+<div class="legend-item" onclick="highlightSystem('digestive', event)">
+  <div class="legend-color" style="background:green;"></div>
+  Digestive System
+</div>
+
+<div class="legend-item" onclick="highlightSystem('reproductive', event)">
+  <div class="legend-color" style="background:#ffd54f;"></div>
+  Reproductive System
+</div>
+
+<div class="legend-item" onclick="highlightSystem('excretory', event)">
+  <div class="legend-color" style="background:purple;"></div>
+  Excretory System
+</div>
+
+<div class="legend-item" onclick="highlightSystem('lymphatic', event)">
+  <div class="legend-color" style="background:orange;"></div>
+  Lymphatic System
+</div>
+
+<div class="legend-item" onclick="resetSystemHighlight()">
+  <div class="legend-color" style="background:white;"></div>
+  Show All
+</div>
+
+</div>
+</div>
+
+</div>
+
+  <!-- RIGHT SIDE -->
+  <div class="dual-box">
+    <img src="ORGANS-F.png" class="dual-img">
+
+<div class="dual-text">
+  <h2>Internal Organs</h2>
+
+<div class="section organ-row reproductive">
+  <div>
+    <h3>Fat Bodies</h3>
+    <p>Yellow, finger-like structures that serve as the primary reservoirs for lipid storage, providing the frog with essential energy during hibernation and mating seasons.</p>
+  </div>
+  <img src="F-FATBODIES.png" loading="lazy">
+</div>
+
+<div class="section organ-row digestive">
+  <div>
+    <h3>Liver</h3>
+    <p>Responsible for filtering toxins from the blood and the production of bile, a fluid stored in the gallbladder that aids in the digestion of fats.</p>
+  </div>
+  <img src="F-LIVER.png" loading="lazy">
+</div>
+
+<div class="section organ-row circulatory">
+  <div>
+    <h3>Heart</h3>
+    <p>A three-chambered muscular organ that acts as the central pump of the circulatory system, directing blood to the lungs for oxygen and then out to the rest of the body.</p>
+  </div>
+  <img src= "F-HEART.png" loading="lazy">
+</div>
+
+<div class="section organ-row excretory">
+  <div>
+    <h3>Kidney</h3>
+    <p>The kidneys are a pair of dark, bean-shaped organs located on the back body wall that filter waste from the blood to produce urine.</p>
+  </div>
+  <img src="F-KIDNEY.png" loading="lazy">
+</div>
+
+<div class="section organ-row respiratory">
+  <div>
+    <h3>Lungs</h3>
+    <p>A three-chambered muscular organ that acts as the central pump of the circulatory system, directing blood to the lungs for oxygen and then out to the rest of the body.</p>
+  </div>
+  <img src="F-LUNGS.png" loading="lazy">
+</div>
+
+<div class="section organ-row excretory">
+  <div>
+    <h3>Gall Bladder</h3>
+    <p>The gallbladder is a small, greenish, pea-shaped sac tucked under the liver that stores bile used for breaking down fats. During digestion, it releases this bile into the small intestine to help break down fats.</p>
+  </div>
+  <img src="F-GALLBLADDER.png" loading="lazy">
+</div>
+
+<div class="section organ-row digestive">
+  <div>
+    <h3>Stomach</h3>
+    <p>Stomach, The frog’s stomach is a J-shaped organ that stores food and continues digestion. It releases digestive juices that help break down food into smaller parts.</p>
+  </div>
+  <img src="F-STOMACH.png" loading="lazy">
+</div>
+
+<div class="section organ-row digestive">
+  <div>
+    <h3>Small Intestine</h3>
+    <p>Small Intestine, The small intestine is a long, coiled tube made up of the duodenum and ileum. It is responsible for most of the digestion and absorption of nutrients.</p>
+  </div>
+  <img src="F-SMALLALARGE.png" loading="lazy">
+</div>
+
+<div class="section organ-row digestive">
+  <div>
+    <h3>Large Intestine</h3>
+    <p>Large Intestine, The large intestine is a shorter but wider tube. Its main functions are to absorb water and salts from undigested food and store waste before it is released through the cloaca.</p>
+  </div>
+  <img src="F-SMALLALARGE.png" loading="lazy">
+</div>
+
+<div class="section organ-row lymphatic">
+  <div>
+    <h3>Spleen</h3>
+    <p>The spleen is a small, dark red, spherical organ found near the stomach that filters blood and supports the immune system. It functions to recycle old red blood cells and produce white blood cells to support the frog's immune system.</p>
+  </div>
+  <img src="F-SPLEEN.png" loading="lazy">
+</div>
+
+<div class="section organ-row digestive">
+  <div>
+    <h3>Esophagus</h3>
+    <p>The esophagus is a short, wide, muscular tube that connects the mouth to the stomach to transport swallowed prey. It is connected to the stomach to break down the food the frog ate.</p>
+  </div>
+  <img src="images/heart.png" loading="lazy"
+     onerror="this.onerror=null; this.src='images/no-image.png'; this.nextElementSibling.style.display='block';">
+
+<p style="display:none; font-size:11px; opacity:0.7; text-align:center;">
+  *Picture not taken
+</p>
+
+</div>
+
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+<!-- HEAD -->
+<div id="headSlide" class="slide">
+<video autoplay muted loop>
+<source src="https://www.pexels.com/download/video/27645932/" type="video/mp4">
+</video>
+
+<button class="back" onclick="goBack()">← Back</button>
+
+<div class="top-image">
+  <img src="F-Tounge.png">
+</div>
+
+<div class="panel">
+<h2>Frog Head (Only explains the dissected and checked parts which is the tounge)</h2>
+<p>A frog’s tongue is attached to the front of its mouth so it can flip out fast to grab foods. The sticky surface helps it hold onto its food so the prey cannot get away.</p>
+</div>
+</div>
+
+<!-- LEG -->
+<div id="legSlide" class="slide">
+<video autoplay muted loop>
+<source src="https://www.pexels.com/download/video/32191393/" type="video/mp4">
+</video>
+
+<button class="back" onclick="goBack()">← Back</button>
+
+<div class="top-image">
+  <img src="F-F.png">
+</div>
+
+<div class="panel">
+<h2>Frog Leg</h2>
+<p>The big back legs help a frog hop high and swim fast to get away from danger. The small front legs help the frog balance and land safely after a jump.</p>
+</div>
+</div>
+
+<!-- WARNING -->
+<div id="warningModal" class="warning">
+<div class="warning-box">
+<h2>⚠️ Dissection Warning</h2>
+<p>This section may contain sensitive images.</p>
+<button onclick="confirmSlide()">Continue</button>
+<button onclick="closeWarning()">Cancel</button>
+</div>
+</div>
+
+<!-- (rest of your slides unchanged...) -->
+
+<script>
+let selectedSlide = "";
+
+function highlightSystem(system, event) {
+
+  let firstMatch = null;
+  const container = document.getElementById("bodySlide");
+
+  // remove active highlight from legend
+  document.querySelectorAll('.legend-item').forEach(el => {
+    el.classList.remove('active');
+  });
+
+  if (event) event.currentTarget.classList.add('active');
+
+  // hide all organs
+  document.querySelectorAll('.organ-row').forEach(el => {
+    el.style.display = "none";
+  });
+
+  // show selected system organs
+  document.querySelectorAll('.' + system).forEach((el, index) => {
+    el.style.display = "flex";
+
+    if (index === 0) firstMatch = el;
+  });
+
+  // scroll to first organ
+  if (firstMatch && container) {
+    container.scrollTo({
+      top: firstMatch.offsetTop - 100,
+      behavior: "smooth"
+    });
+  }
+}
+
+function resetSystemHighlight() {
+  document.querySelectorAll('.organ-row').forEach(el => {
+    el.style.display = "flex";
+  });
+
+  document.querySelectorAll('.legend-item').forEach(el => {
+    el.classList.remove('active');
+  });
+}
+function showWarning(slide){
+  selectedSlide = slide;
+  document.getElementById("warningModal").style.display = "flex";
+}
+
+function closeWarning(){
+  document.getElementById("warningModal").style.display = "none";
+}
+
+function confirmSlide(){
+  closeWarning();
+  openSlide(selectedSlide);
+}
+
+function openSlide(id){
+  document.getElementById("mainScreen").style.display = "none";
+  document.getElementById(id).classList.add("active");
+}
+
+function goBack(){
+  document.querySelectorAll(".slide").forEach(s => s.classList.remove("active"));
+  document.getElementById("mainScreen").style.display = "block";
+}
+
+function zoomImage(src){
+  window.open(src, "_blank");
+}
+
+/* HIGHLIGHT */
+function highlightPart(part) {
+  document.querySelectorAll('.part').forEach(p => {
+    p.style.opacity = 0.2;
+    p.style.filter = "none";
+  });
+
+  document.querySelectorAll('.' + part + '-part').forEach(p => {
+    p.style.opacity = 1;
+    p.style.filter = "drop-shadow(0 0 10px #a5d6a7)";
+  });
+}
+
+function resetHighlight() {
+  document.querySelectorAll('.part').forEach(p => {
+    p.style.opacity = 1;
+    p.style.filter = "none";
+  });
+}
+</script>
+
+</body>
+</html>
